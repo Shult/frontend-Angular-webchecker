@@ -1,0 +1,27 @@
+.button-green{
+  background-color: #28a745;
+}
+
+.button-green:hover {
+  background-color: #218838;
+}
+.button-gray{
+  background-color: #999;
+}
+
+.button-gray:hover{
+  background-color: #888;
+}
+button {
+  color: white; /* Text color */
+  padding: 10px 20px; /* Internal spacing */
+  border: none; /* Remove border */
+  border-radius: 4px; /* Rounded corners */
+  cursor: pointer; /* Mouse cursor as pointer */
+  transition: background-color 0.3s ease; /* Hover transition */
+  margin: 1%;
+}
+
+button:hover {
+  background-color: #45a049; /* Hover background color */
+}
