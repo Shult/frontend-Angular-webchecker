@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { WebsiteService } from '../services/website.service';
-import { API_URL, NB_RELOAD_IMAGE, URL_LOGS, URL_EXCELS, URL_SCREENSHOTS } from '../constants'
-//import * as url from "url";
-import {ApiResponseRust} from "../services/website";
+import { NB_RELOAD_IMAGE, URL_LOGS, URL_EXCELS } from '../constants'
+
 import {finalize} from "rxjs";
 
 

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { LogService } from '../services/log.service';
 import { API_URL } from 'src/app/constants'
 
