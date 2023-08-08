@@ -2,14 +2,11 @@
   <div class="dashboard">
     <div class="upload-section topnav" >
       <input class="active" type="file" (change)="onFileSelected($event)">
-      <button class="button-green" id="bt_check" (click)="onSubmit()">Check websites</button>
-      <button class="button-blue" [class]="getButtonClass()" (click)="downloadLogs()" [disabled]="!isVerificationComplete">Download logs</button>
-      <button class="button-blue" [class]="getButtonClass()" (click)="downloadExcel()" [disabled]="!isVerificationComplete">Download excel file</button>
+      <button class="button-green" id="bt_check_rust" (click)="onSubmit($event)">Check websites with Rust</button>
       <button class="button-blue" [class]="getButtonClass()" id="bt_pdf" (click)="onClickPrint()" [disabled]="!isVerificationComplete">Print to PDF</button>
 
       <app-help-button></app-help-button>
     </div>
-
 
     <div id="filter-buttons">
       <label>
@@ -17,6 +14,9 @@
       </label>
       <label>
         <input id="down" type="checkbox" value="down" (change)="toggleFilter('down', $event)" checked> DOWN
+      </label>
+      <label>
+        <input id="timeout" type="checkbox" value="timeout" (change)="toggleFilter('timeout', $event)" checked> TIMEOUT
       </label>
     </div>
     <a href="http://localhost:4200/logs-compare"><button class="button-blue">Compare logs (Precheck and Postcheck)</button></a>
@@ -27,6 +27,8 @@
     </div>
   </div>
 </div>
+
+<mat-progress-bar *ngIf="isLoading" mode="indeterminate" class="bottom-progress-bar"></mat-progress-bar>
 
 <table>
   <tr>
@@ -43,7 +45,11 @@
   </tr>
   <tr>
     <td>Down:</td>
-    <td>{{ nbTotalSites-nbUpSites }}</td>
+    <td>{{ nbDownSites }}</td>
+  </tr>
+  <tr>
+    <td>Timeout:</td>
+    <td>{{ nbTimeoutSites }}</td>
   </tr>
   <tr>
     <td>Ratio:</td>
@@ -51,20 +57,17 @@
   </tr>
 </table>
 
-<div *ngFor="let website of websites" class="website-container grid-container hideUp" [class.up]="website.status === 'up' && upFilter" [class.down]="website.status === 'down' && downFilter" [class.hidden]="!(website.status === 'up' && upFilter) && !(website.status === 'down' && downFilter)">
+<div *ngFor="let website of websites" class="website-container grid-container hideUp" [class.timeout]="website.status === 'TIMEOUT' && timeoutFilter" [class.up]="website.status === 'UP' && upFilter" [class.down]="website.status === 'DOWN' && downFilter" [class.hidden]="!(website.status === 'UP' && upFilter) && !(website.status === 'DOWN' && downFilter) && !(website.status === 'TIMEOUT' && timeoutFilter)">
   <div class="website-screenshot">
-    <ng-container *ngIf="website.status === 'up'">
-      <img [src]="'http://localhost:3000/' + website.screen" alt="Screenshot" (error)="handleImageError(website)">
+    <ng-container *ngIf="website.status === 'UP'">
+      <img src="http://localhost:8000/screenshot/{{ date }}/{{website.screenshot}}" alt="Screenshot" height="600" width="800">
     </ng-container>
   </div>
 
 
   <div class="grid-container-4">
     <div class="website-info grid-container-vertical">
-      <p><strong>URL:</strong>  <a target="_blank" href="{{ website.url }}">{{ website.url }}</a></p>
-      <p><strong>Response time:</strong> {{ website.responseTime }}s</p>
-      <p><strong>ID:</strong> {{ website.id }}</p>
-      <p><strong>SSL added:</strong> {{ website.addssl }}</p>
+      <p><strong>URL:</strong>  <a target="_blank" href="{{ website.urls }}">{{ website.urls }}</a></p>
     </div>
     <div class="container">
       <p class="centered-text"><strong>Status:</strong> {{ website.status }}</p>

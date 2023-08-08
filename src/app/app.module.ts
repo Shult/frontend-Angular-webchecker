@@ -10,6 +10,7 @@ import {HelpButtonComponent} from "./help-button/help-button.component";
 import { CompareLogsComponent } from './compare-logs/compare-logs.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatTableModule } from '@angular/material/table';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import { RouterModule } from '@angular/router';
 
@@ -29,6 +30,7 @@ import { RouterModule } from '@angular/router';
     AppRoutingModule,
     BrowserAnimationsModule,
     MatTableModule,
+    MatProgressBarModule,
     RouterModule.forRoot(routes)
   ],
   providers: [WebsiteService],

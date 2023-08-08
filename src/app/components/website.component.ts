@@ -1,26 +1,39 @@
 import { Component, OnInit } from '@angular/core';
 import { WebsiteService } from '../services/website.service';
 import { API_URL, NB_RELOAD_IMAGE, URL_LOGS, URL_EXCELS, URL_SCREENSHOTS } from '../constants'
-import { Router } from '@angular/router';
+//import * as url from "url";
+import {ApiResponseRust} from "../services/website";
+import {finalize} from "rxjs";
+
 
 @Component({
   selector: 'app-website',
   templateUrl: './website.component.html',
   styleUrls: ['./website.component.css']
 })
+
 export class WebsiteComponent implements OnInit {
   websites: any[] = []; // A table for storing websites
+  nbTotalSites: number = 0;
+  nbUpSites: number = 0;
+  nbDownSites: number = 0;
+  nbTimeoutSites: number = 0;
+  date : any = "";
+
+  isLoading = false;
+
+
   logs : any = ""; // Init logs
   isVerificationComplete: boolean = false;
   fileToUpload: File | null = null;// Init file to Upload
   upFilter: boolean = true; // Property to filter "UP" sites
   downFilter: boolean = true; // Property to filter "DOWN" sites
+  timeoutFilter: boolean = true; // Property to filter "DOWN" sites
   maxNumberErrorAttempts = 0 ;
 
-  nbTotalSites: number = 0;
-  nbUpSites: number = 0;
 
-  constructor(private websiteService: WebsiteService, private router: Router) {}
+
+  constructor(private websiteService: WebsiteService) {}
 
   ngOnInit(): void {
   }
@@ -30,29 +43,53 @@ export class WebsiteComponent implements OnInit {
     const target = event.target as HTMLInputElement;
     if( target.files ) {
       this.fileToUpload = target.files[0];
+      console.log("On file selected"+ this.fileToUpload);
     } else {
-      console.log("Error: onFileSelected null")
+      console.log("Error: onFileSelected null");
     }
   }
 
-  async onSubmit() {
+  async onSubmit(event: any) {
     const fileReader = new FileReader();
     if (this.fileToUpload) {
       fileReader.readAsText(this.fileToUpload, "UTF-8");
       fileReader.onload = async () => {
+        console.log("fileReader.result = " + fileReader.result);
         if(fileReader.result){
-          const urls = (fileReader.result as string).split('\n');
-          this.websiteService.checkWebsites(urls).subscribe(
-            websites => {
-              this.websites = websites.results;
-              this.logs = websites.logs;
-              this.nbTotalSites = websites.nbTotalSites;
-              this.nbUpSites = websites.nbUpSites;
+
+          this.isLoading = true; // Start showing the progress bar
+          this.websiteService.checkWebsitesRust(fileReader.result as string, event).pipe(
+            finalize(() => this.isLoading = false)).subscribe(
+            response => {
+              // Split the response by line breaks to get individual JSON strings
+              const lines = (response as string).trim().split('\n');
+
+              // Parse each line to get JSON objects
+              let parsedObjects = lines.map(line => JSON.parse(line));
+              console.log(parsedObjects);
+              const websiteObjects = parsedObjects.filter(obj => !('date' in obj));
+              const dateObjects = parsedObjects.filter(obj => 'date' in obj);
+
+
+              console.log("dateObjects: "+ dateObjects);
+              console.log("dateObjects: "+ dateObjects[0].date);
+              console.log("dateObjects: "+ dateObjects[0].up_count);
+              console.log("dateObjects: "+ dateObjects[0].down_count);
+              console.log("dateObjects: "+ dateObjects[0].timeout_count);
+
+              this.date = dateObjects[0].date;
+              this.nbUpSites = dateObjects[0].up_count;
+              this.nbDownSites = dateObjects[0].down_count;
+              this.nbTimeoutSites = dateObjects[0].timeout_count;
+              this.nbTotalSites = (dateObjects[0].up_count + dateObjects[0].down_count + dateObjects[0].timeout_count);
+
+              console.log(websiteObjects[3].screenshot)
+              this.websites = websiteObjects;
 
               this.isVerificationComplete = true; // Updating the isVerificationComplete variable
             },
             error => {
-              console.error('There was an error!', error);
+              console.error('There was an error:', error);
             }
           );
         } else {
@@ -64,6 +101,7 @@ export class WebsiteComponent implements OnInit {
       }
     }
   }
+
 
   downloadLogs() {
     console.log("logs name: "+this.logs);
@@ -90,7 +128,7 @@ export class WebsiteComponent implements OnInit {
   handleImageError(website: any) {
     if(this.maxNumberErrorAttempts<=NB_RELOAD_IMAGE){
       website.screen += '?' + new Date().getTime(); // Add a single request parameter to force image refresh
-      console.log("ADD HANGLE IMAGE ERROR: "+this.maxNumberErrorAttempts);
+      console.log("ADD HANDLE IMAGE ERROR: "+this.maxNumberErrorAttempts);
       this.maxNumberErrorAttempts++;
     } else {
       console.log("Cannot load this image "+ website.screen +", to many attempts.");
@@ -99,7 +137,7 @@ export class WebsiteComponent implements OnInit {
   }
 
   toggleFilter(filter: string, event: Event) {
-    console.log("toogleFilter");
+    console.log("toggleFilter");
     const checked = (event.target as HTMLInputElement).checked;
     if (filter === 'up') {
       console.log("up");
@@ -107,6 +145,9 @@ export class WebsiteComponent implements OnInit {
     } else if (filter === 'down') {
       console.log("down");
       this.downFilter = checked;
+    } else if (filter === 'timeout') {
+      console.log("timeout");
+      this.timeoutFilter = checked;
     }
   }
 
